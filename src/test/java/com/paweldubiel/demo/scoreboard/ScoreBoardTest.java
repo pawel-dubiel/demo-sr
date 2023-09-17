@@ -94,7 +94,6 @@ class ScoreBoardTest {
         scoreBoard.startGame("Uruguay", "Italy");
         scoreBoard.startGame("Argentina", "Australia");
 
-        // Update the scores
         scoreBoard.updateScore("Argentina", "Australia", 3, 1);
         scoreBoard.updateScore("Mexico", "Canada", 0, 5);
         scoreBoard.updateScore("Spain", "Brazil", 10, 2);
