@@ -1,6 +1,6 @@
 package com.paweldubiel.demo.scoreboard;
 
-record Game(String homeTeam, String awayTeam, int homeScore, int awayScore, long order) {
+public record Game(String homeTeam, String awayTeam, int homeScore, int awayScore, long order) {
 
   public Game {
     if (homeScore < 0 || awayScore < 0) {

@@ -1,51 +1,57 @@
 package com.paweldubiel.demo.scoreboard;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+@Service
+@RequiredArgsConstructor
 class ScoreBoard {
 
-  private final Map<String, Game> games = new HashMap<>();
+  private final SoccerRepository repository;
   private final AtomicLong gameCounter = new AtomicLong(0);
 
-  public void startGame(String homeTeam, String awayTeam) {
-    String key = buildKey(homeTeam, awayTeam);
+  /**
+   * start game
+   *
+   * @throws  GameAlreadyExistsException throw
+   *
+   * @param homeTeam
+   * @param awayTeam
+   */
+  public void startGame(final String homeTeam, final String awayTeam) {
 
-    if (games.containsKey(key)) {
+
+    if (repository.containsGame(homeTeam, awayTeam)) {
       throw new GameAlreadyExistsException("Start Game: Game already exists");
     }
 
-    games.put(key, new Game(homeTeam, awayTeam, 0, 0, gameCounter.getAndIncrement()));
+    repository.save(new Game(homeTeam, awayTeam, 0, 0, gameCounter.getAndIncrement()));
   }
 
   public void updateScore(String homeTeam, String awayTeam, int homeScore, int awayScore) {
-    String key = buildKey(homeTeam, awayTeam);
 
-    if (!games.containsKey(key)) {
-      throw new GameDoesNotExistException("Update Score: Game does not exist");
-    }
+    Game oldGame = repository.findByHomeTeamAndAwayTeam(homeTeam, awayTeam).orElseThrow(
+            ()-> new GameDoesNotExistException("Update Score: Game does not exist")
+    );
 
-    Game oldGame = games.get(key);
     Game newGame = new Game(homeTeam, awayTeam, homeScore, awayScore, oldGame.order());
-    games.put(key, newGame);
+    repository.save(newGame);
   }
 
   public void finishGame(String homeTeam, String awayTeam) {
-    String key = buildKey(homeTeam, awayTeam);
 
-    if (!games.containsKey(key)) {
+    if (!repository.containsGame(homeTeam, awayTeam)) {
       throw new GameDoesNotExistException("Finish Game: Game does not exist");
     }
-
-    games.remove(key);
+    repository.delete(homeTeam, awayTeam);
   }
 
   public List<String> getSummary() {
-    return games.values().stream()
+    return repository.findAll().stream()
         .sorted(gameComparator())
         .map(
             game ->
@@ -55,11 +61,22 @@ class ScoreBoard {
         .collect(Collectors.toList());
   }
 
-  private Comparator<Game> gameComparator() {
+  private static Comparator<Game> gameComparator() {
     return Comparator.comparingInt(Game::gameTotalScore).thenComparing(Game::order).reversed();
   }
 
-  private String buildKey(String homeTeam, String awayTeam) {
-    return String.format("%s-%s", homeTeam, awayTeam);
+  public String getScore(final String team) {
+
+    List<Game> games =repository.findAll().stream().filter(currentGame-> currentGame.homeTeam().equals(team) || currentGame.awayTeam().equals(team)).toList();
+
+    Game game = games.get(0);
+    if (game.homeTeam().equals(team) ) {
+      return String.valueOf(game.homeScore());
+    } else if (game.awayTeam().equals(team)) {
+      return String.valueOf(game.awayScore());
+    } else {
+      return "-1";
+    }
+
   }
 }

@@ -15,7 +15,7 @@ class ScoreBoardTest {
 
     @BeforeEach
     void setUp() {
-        scoreBoard = new ScoreBoard();
+        scoreBoard = new ScoreBoard(new InMemorySoccerRepository());
     }
 
     @Test
@@ -114,5 +114,19 @@ class ScoreBoardTest {
 
         // then
         assertEquals(expectedSummary, actualSummary);
+    }
+
+    @Test
+    @DisplayName("Should get a score for the game")
+    void test1() {
+        // given
+        scoreBoard.startGame("Mexico", "Canada");
+        scoreBoard.startGame("Spain", "Brazil");
+
+        //when
+        scoreBoard.updateScore("Mexico", "Canada", 0, 5);
+
+        // then
+        assertEquals("0", scoreBoard.getScore("Mexico"));
     }
 }
